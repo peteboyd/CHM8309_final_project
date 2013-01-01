@@ -21,11 +21,7 @@ class Atom(object):
         self._element = element
         self._mass = MASS[element]
         self.set_position(position)
-        # scaled a, b, and c are the fractional positions of the atom
-        # in a box.
-        self._scaled_a = 0.
-        self._scaled_b = 0.
-        self._scaled_c = 0.
+        self._position
 
     @property
     def mass(self):
@@ -41,9 +37,7 @@ class Atom(object):
         if self.position_history:
             raise ValueError("Cannot assign positions once \
                               MD simulation has begun.")
-        self._x = position[0]
-        self._y = position[1]
-        self._z = position[2]
+        self._position = np.array(position)
 
     def get_position(self):
         """Returns the position as a numpy array."""
@@ -62,5 +56,59 @@ class System(object):
         
         """
         self.temperature = temperature
-        self.boundaries = boundaries
+        self.boundaries = np.matrix(boundaries)
+        self.atoms = [] # array of atoms in the system
+
+    def get_temperature(self):
+        """Determines the global temperature based on the velocities of 
+        the atoms in the system.
+
+        """
+        pass
+
+class LeapFrog(Integrator):
+    """Integration scheme for propagating an object with mass through time."""
+
+    def __init__(self):
+        """Information required to increment position. I haven't decided
+        how to interface the integrator class with Atom.
+
+        Ideally all these variables in __init__ should be taken from the 
+        parent without having to pass it to the class each time the
+        position is updated.
+        """
+        self._mass = 0.
+        self._position = 0.
+        self._velocity = 0.
+        self._force = 0.
+        self._dt = 0.
+
+    def update_position(self):
+        """Leap-frog integration to propagate the object through time."""
+        return (self._position + (self._velocity*self._dt))
+
+    def update_velocity(self):
+        """Note, Leap-frog velocities are set at integer + 1/2 timesteps."""
+        return (self._velocity + (self._force*self._dt))
+
+class Verlet(Integrator):
+    """Move an object through time with the verlet integrator."""
+
+
+class Integrator(object):
+    """Object currently contains two integration schemes, the verlet and
+    leap frog algorithms.
+    More can be included in this class at a later date.
+
+    """
+    def __init__(self, mass, position, velocity, force, dt):
+        """Information required to increment position. I haven't decided
+        how to interface the integrator class with Atom.
+
+        """
+        self._mass = mass 
+        self._position = np.array(position)
+        self._velocity = np.array(velocity)
+        self._force = np.array(force)
+        self._dt = dt
 
