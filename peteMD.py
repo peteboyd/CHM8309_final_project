@@ -4,46 +4,81 @@ import numpy as np
 
 """peteMD.py -- MD simulations in python."""
 
+class LeapFrog:
+    """Integration scheme for propagating an object with mass through time."""
+
+    # global variable for the time step.  This should not change through
+    # a simulation.
+    dt = 1.
+
+    @classmethod
+    def update_position(cls, atom):
+        """Leap-frog integration to propagate the object through time.
+        x(t+dt) = x(t) + v(t-dt/2)*dt
+
+        """
+        atom._position = (atom._position + (atom._velocity*cls.dt))
+
+    @classmethod
+    def update_velocity(cls, atom):
+        """Note, Leap-frog velocities are set at half-integer timesteps.
+        v(t+dt/2) = v(t-dt/2) + a(t)*dt
+
+        """
+        atom._velocity = (atom._velocity + (atom._force/atom._mass)*cls.dt)
+
+
+class VelocityVerlet:
+    """Move an object through time with the velocity verlet integrator."""
+
+    # global variable for the time step.  This should not change through
+    # a simulation.
+    dt = 1.
+
+    @classmethod
+    def update_position(cls):
+        """Velocity verlet integration
+        x(t+dt) = x(t) + v(t)*dt + 0.5*a(t)*dt^2
+
+        """
+        atom.position = (atom._position + (atom._velocity*cls.dt) + 
+                (atom._force/(2.*atom._mass)*cls.dt*cls.dt))
+        # set the force to None for the current time-step.  This is to
+        # ensure that the calculation of velocity is done correctly
+        atom.force_history.append(atom._force)
+        atom._force = None
+
+    @classmethod
+    def update_velocity(cls):
+        """Update velocities, this requires computed forces at the current
+        time step.
+        v(t+dt) = v(t) + 0.5*[a(t) + a(t+dt)]*dt
+
+        """
+        if atom._force is None:
+            raise Error("Cannot update velocity in Velocity Verlet scheme"+
+                "unless forces are re-calculated at the current time step!")
+
+        atom._velocity = (atom._velocity + 
+                (atom.force_history[-1] + atom._force)/(2.*atom._mass)*
+                cls.dt)
+
 class Atom(object):
     """Describes an atom with a mass.
-    Functions described herein allow the Atom position to evolve through time
-    subject to Newtonian forces.
-
-    [include description of verlet integrator]
 
     """
-
     def __init__(self, element, position=np.zeros(3), name=None):
         """Read in element symbol. Mass is assigned from a lookup table."""
         self.index = 0  # index can be assigned from some wrapper class
         self.name = name if name else element
         self.position_history = []
+        self.velocity_history = []
+        self.force_history = []
         self._element = element
         self._mass = MASS[element]
-        self.set_position(position)
-        self._position
-
-    @property
-    def mass(self):
-        return self._mass
-
-    def set_position(self, position):
-        """Assigns the scaled position to the atom, based on the dimensions
-        of the cell.  
-        Each cartesian coordinate is stored as a separate private variable,
-        which makes for easier readability.
-
-        """
-        if self.position_history:
-            raise ValueError("Cannot assign positions once \
-                              MD simulation has begun.")
         self._position = np.array(position)
-
-    def get_position(self):
-        """Returns the position as a numpy array."""
-        return np.array([self._x, self._y, self._z])
-
-    position = property(get_position, set_position)
+        self._velocity = np.zeros(3)
+        self._force = np.zeros(3)
 
 class System(object):
     """Contains atoms and system-wide thermodynamic data such as Temperature
@@ -66,49 +101,54 @@ class System(object):
         """
         pass
 
-class LeapFrog(Integrator):
-    """Integration scheme for propagating an object with mass through time."""
+def lennardjones(epsilon, sigma, vector):
 
-    def __init__(self):
-        """Information required to increment position. I haven't decided
-        how to interface the integrator class with Atom.
+    r = np.linalg.norm(vector)
+    direction = vector / r 
 
-        Ideally all these variables in __init__ should be taken from the 
-        parent without having to pass it to the class each time the
-        position is updated.
-        """
-        self._mass = 0.
-        self._position = 0.
-        self._velocity = 0.
-        self._force = 0.
-        self._dt = 0.
-
-    def update_position(self):
-        """Leap-frog integration to propagate the object through time."""
-        return (self._position + (self._velocity*self._dt))
-
-    def update_velocity(self):
-        """Note, Leap-frog velocities are set at integer + 1/2 timesteps."""
-        return (self._velocity + (self._force*self._dt))
-
-class Verlet(Integrator):
-    """Move an object through time with the verlet integrator."""
-
-
-class Integrator(object):
-    """Object currently contains two integration schemes, the verlet and
-    leap frog algorithms.
-    More can be included in this class at a later date.
-
-    """
-    def __init__(self, mass, position, velocity, force, dt):
-        """Information required to increment position. I haven't decided
-        how to interface the integrator class with Atom.
+    def energy():
+        """determine the pairwise energy.
+        E = 4*epsilon*[(sigma/r)^12 - (sigma/r)^6]
 
         """
-        self._mass = mass 
-        self._position = np.array(position)
-        self._velocity = np.array(velocity)
-        self._force = np.array(force)
-        self._dt = dt
+        return (4 * epsilon * ((sigma/r)**12 - (sigma/r)**6))
 
+    def force():
+        """Returns the force vector based on a pairwise
+        lennard-jones function.
+        
+        F = -24*epsilon*[2*sigma^12/r^13 - sigma^6/r^7]
+
+        """
+
+        return direction * (-24 * epsilon * (2*sigma**12/r**13 - sigma**6/r**7))
+
+def buckingham(A, B, C, vector):
+   
+    r = np.linalg.norm(vector)
+    direction = vector / r
+
+    def energy():
+        """calculate the pairwise energy.
+        E = A*exp(-B*r) - C/r^6
+
+        """
+
+        return (A * exp(-B*r) - C/(r**6))
+    def force():
+        """returns a vector parallel to the original
+        vector, with direction and magnitude determined
+        by the force calculation based on the buckingham
+        potential.
+
+        F = -B*A*exp(-B*r) + 6*C/r^7
+
+        """
+
+        return direction * (-B * A * exp(-B*r) + 6 * C / (r**7))
+
+def main():
+    atm = Atom("Cu")
+
+if __name__ == "__main__":
+    main()
