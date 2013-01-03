@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from mass import MASS, epsilon, sigma
+from element import MASS, epsilon, sigma
 import numpy as np
 import math
 import itertools
