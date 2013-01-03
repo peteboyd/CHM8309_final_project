@@ -17,6 +17,7 @@ class LeapFrog:
         x(t+dt) = x(t) + v(t-dt/2)*dt
 
         """
+        atom.position_history.append(atom._position)
         atom._position = (atom._position + (atom._velocity*cls.dt))
 
     @classmethod
@@ -25,6 +26,8 @@ class LeapFrog:
         v(t+dt/2) = v(t-dt/2) + a(t)*dt
 
         """
+        atom.force_history.append(atom._force)
+        atom.velocity_history.append(atom._velocity)
         atom._velocity = (atom._velocity + (atom._force/atom._mass)*cls.dt)
 
 
@@ -41,6 +44,7 @@ class VelocityVerlet:
         x(t+dt) = x(t) + v(t)*dt + 0.5*a(t)*dt^2
 
         """
+        atom.position_history.append(atom._position)
         atom.position = (atom._position + (atom._velocity*cls.dt) + 
                 (atom._force/(2.*atom._mass)*cls.dt*cls.dt))
         # set the force to None for the current time-step.  This is to
@@ -58,7 +62,7 @@ class VelocityVerlet:
         if atom._force is None:
             raise Error("Cannot update velocity in Velocity Verlet scheme"+
                 "unless forces are re-calculated at the current time step!")
-
+        atom.velocity_history.append(atom._velocity)
         atom._velocity = (atom._velocity + 
                 (atom.force_history[-1] + atom._force)/(2.*atom._mass)*
                 cls.dt)
@@ -70,15 +74,16 @@ class Atom(object):
     def __init__(self, element, position=np.zeros(3), name=None):
         """Read in element symbol. Mass is assigned from a lookup table."""
         self.index = 0  # index can be assigned from some wrapper class
+        self.element = element
         self.name = name if name else element
         self.position_history = []
         self.velocity_history = []
         self.force_history = []
-        self._element = element
         self._mass = MASS[element]
         self._position = np.array(position)
         self._velocity = np.zeros(3)
         self._force = np.zeros(3)
+
 
 class System(object):
     """Contains atoms and system-wide thermodynamic data such as Temperature
@@ -93,6 +98,8 @@ class System(object):
         self.temperature = temperature
         self.boundaries = np.matrix(boundaries)
         self.atoms = [] # array of atoms in the system
+        # NOTE only lennard-jones parameters available at the moment.
+        self.lr_param = {'lj':{}}
 
     def get_temperature(self):
         """Determines the global temperature based on the velocities of 
@@ -100,6 +107,19 @@ class System(object):
 
         """
         pass
+
+    def mix_pair_potentials(self):
+        """Returns the pair potential mixing.
+
+        """
+        elements = [atom.element for atom in self.atoms]
+        atom_pairs = list(itertools.combinations(elements, 2))
+        for pair in atom_pairs:
+            # mix the parameters
+            pair.sort()
+            eps = math.sqrt(epsilon[pair[0]]*epsilon[pair[1]])
+            sig = (sigma[pair[0]] + sigma[pair[1]]) / 2.
+            self.lr_param['lj'].setdefault(pair, {'epsilon':eps, 'sigma':sig})
 
 def lennardjones(epsilon, sigma, vector):
 
