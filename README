@@ -113,6 +113,14 @@ vect2 =  0.0000 20.0000  0.0000
 vect3 =  0.0000  0.0000 20.0000
 ====================================
 
+== Execution of Pete MD ==
+Once an appropriate input file has been made for the program, make sure
+that it is in the current working directory and enter:
+>peteMD.py
+at the command line.  This will produce no output to the screen, however
+the his.xyz file should be updated at each MD timestep. One can 
+visualize the output during the run using the instructions provided below
+
 == Visualization of output ==
 
 To visualize output on a linux computer, ensure first that "XMAKEMOL" is
