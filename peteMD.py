@@ -111,6 +111,8 @@ class System(object):
         """
         # total system energy
         self.energy = 0.
+        # energy history
+        self.energy_history = []
         # total number of timesteps
         self.timesteps = 0
         self.temperature = temperature
@@ -120,6 +122,10 @@ class System(object):
         self.atoms = [] # array of atoms in the system
         # NOTE only lennard-jones parameters available at the moment.
         self.lr_param = {'lj':{}}
+        # initiate the history file which will be appended to
+        # throughout the simulation
+        hisfile = open("his.xyz", "w")
+        hisfile.close()
 
     def get_temperature(self):
         """Determines the global temperature based on the velocities of 
@@ -199,6 +205,12 @@ class System(object):
             # update the total energy
             self.energy += energy()
 
+    def calculate_velocities(self):
+        """Determine velocities for all the atoms in the system."""
+
+        for atom in self.atoms:
+            VelocityVerlet.update_velocity(atom)
+
     def increment_time(self):
         """Main MD part, this will increment the system in time by one
         time step.
@@ -206,9 +218,13 @@ class System(object):
         """
         self.timesteps += 1
         for atom in self.atoms:
-            # update velocities for the current time step
-            VelocityVerlet.update_velocity(atom)
             VelocityVerlet.update_position(atom)
+            # shift atom to within the boundaries
+            atom.position = self.shift_position(atom.position)
+
+        # reset energy
+        self.energy_history.append(self.energy)
+        self.energy = 0.
 
     def boxshift(self, vector):
         """Shift a vector to within the bounds of the periodic box."""
@@ -217,6 +233,51 @@ class System(object):
         # reduce vector to within a half-unit-cell length.
         fvect -= np.around(fvect)
         return np.dot(fvect, self.boundaries)
+
+    def shift_position(self, position):
+        """Shift a coordinate position to within the bounds of the periodic
+        box.
+
+        """
+
+        fpos = np.dot(self.inverted_bounds, position)
+        fpos -= np.floor(fpos)
+        return np.dot(fpos, self.boundaries)
+
+    def append_history(self):
+        """Write atomic coordinates to a history file called his.xyz"""
+
+        natoms = len(self.atoms)
+        # first write the vectors corresponding to the bounding box
+        box = "%-10s%9.3f%9.3f%9.3f%9.3f%9.3f%9.3f"%("bbox_xyz",
+                0., self.boundaries[0][0], 0., self.boundaries[1][1],
+                0., self.boundaries[2][2])
+
+        atom_lines = ""
+        for atom in self.atoms:
+            atom_pos = "%-6s %9.3f %9.3f %9.3f"%(atom.element, 
+                                              atom.position[0],
+                                              atom.position[1], 
+                                              atom.position[2])
+            atom_vel = "%-14s %9.3f %9.3f %9.3f"%("atom_vector", 
+                                               atom._velocity[0],
+                                               atom._velocity[1],
+                                               atom._velocity[2])
+            atom_frc = "%-14s %9.3f %9.3f %9.3f"%("atom_vector", 
+                                               atom._force[0],
+                                               atom._force[1],
+                                               atom._force[2])
+
+            if atom.index == 0:
+                atom_pos += " %s"%(box)
+
+            atom_lines += "%s %s %s\n"%(atom_pos, atom_vel, atom_frc) 
+
+        header = "%i\nstep # %i energy: %f\n"%(natoms, self.timesteps, 
+                                             self.energy)
+        hisfile = open("his.xyz", "a")
+        hisfile.writelines(header + atom_lines)
+        hisfile.close()
 
 def lennardjones(eps, sig, vector):
 
@@ -267,16 +328,25 @@ def buckingham(A, B, C, vector):
     return energy, force
 
 def main():
-    sim_box = 10.*np.identity(3)
+    sim_box = 20.*np.identity(3)
     md = System(298.15, sim_box)
     r = np.random
-    atom1 = Atom("Ar", position=r.rand(3)*r.randint(0, 8))
+    atom1 = Atom("Ar", position=r.rand(3)*r.randint(0, 20))
     atom2 = Atom("Kr", position=r.rand(3)*r.randint(0, 20))
     md.add_atom(atom1)
     md.add_atom(atom2)
     md.mix_pair_potentials()
-    md.calculate_forces()
-    md.increment_time()
+
+    for t in range(1000):
+
+        # determine forces for the current time step
+        md.calculate_forces()
+        # determine atomic velocities for the current timestep
+        md.calculate_velocities()
+        # store the atomic positions, velocities and forces in a history file
+        md.append_history()
+        # advance the atom to t+dt
+        md.increment_time()
 
 if __name__ == "__main__":
     main()
