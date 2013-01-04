@@ -3,7 +3,6 @@ from element import MASS, epsilon, sigma
 import numpy as np
 import math
 import itertools
-import sys
 import ConfigParser
 from numpy import asarray, asmatrix
 
