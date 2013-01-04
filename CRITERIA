@@ -1,0 +1,60 @@
+# document highlighting the criteria met by Pete MD to complete the final
+# project for CHM8309
+
+1.  contains the following functionality:
+        * periodic boundary conditions
+        * choice of integrators (LeapFrog, VelocityVerlet)
+        * choice of dipersion potentials (lennard-jones, buckingham)
+
+2.  "Write good user documentation"
+    user documentation provided in the README file
+
+3.  "Have input and output that is appropriate for the code"
+    input file read "petemd.inp", output file "his.xyz"
+
+4.  "Show that you have provided a well designed and documented public facing 
+        interface"
+    classes have (I admit, poorly implemented) public and private variables and
+    contain line comments and docstrings to guide the reader.  In addition a
+    developer documentation is included in the file DEV_DOC.
+
+5.  "Identify some portions of the code where you have adopted a functional 
+        programming style and why it is appropriate"
+    I adopted functional programming for the potential functions (lennardjones
+    and buckingham). While I personally think these functions break the object
+    oriented style of the rest of the code, I implemented them for the sake of
+    the class requirement.
+
+6.  "Include a generator expression"
+    Generator expressions can be found for calculating all the pairwise
+    interactions between atoms. I used itertools.combinations to quickly
+    generate these atom pairs.
+
+7.  "Show some places where you have applied object oriented ideas, be 
+        specific about the terminology, and why it was appropriate"
+    The program was designed to be primarily object oriented. This is to allow
+    for easy manipulation of functionality. For example the LeapFrog and
+    VelocityVerlet integrators can be easily swapped, and new integrators
+    can be included with a minimum of developer time.
+    I included classmethods for the integrators, so that when one of them
+    is called, an instance isn't needed and it becomes obvious to one reading
+    the code what is being done (eg. LeapFrog.update_position reveals what
+    integrator is being used and what it is doing.)
+
+8.  "Code must include a comprehensive unit test suite with high code 
+        coverage."
+    Unit testing is provided in the test_suite.py file which accompanies the
+    package. The report from coverage says 68% of the main program is covered
+    in the unit testing suite.
+
+9.  "Show examples of how code has been debugged with assertions, 'print's 
+        or debuggers (these do not need to be included in the final code)"
+    I used 'print' statements all throughout development of this code to
+    ensure the code was doing what I expected. For example, to test the
+    input file reading I used the following code in the main() function
+
+    inp = Input()
+    print inp.return_temperature()
+
+    The output was as expected: 298.15
+
