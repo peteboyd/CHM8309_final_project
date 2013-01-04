@@ -246,26 +246,34 @@ class System(object):
 
         atom_lines = ""
         for atom in self.atoms:
+            # write the atom position string
             atom_pos = "%-6s %9.3f %9.3f %9.3f"%(atom.element, 
                                               atom.position[0],
                                               atom.position[1], 
                                               atom.position[2])
+            # write the atom velocity string
             atom_vel = "%-14s %9.3f %9.3f %9.3f"%("atom_vector", 
                                                atom._velocity[0],
                                                atom._velocity[1],
                                                atom._velocity[2])
+            # write the atom force string
             atom_frc = "%-14s %9.3f %9.3f %9.3f"%("atom_vector", 
                                                atom._force[0],
                                                atom._force[1],
                                                atom._force[2])
 
             if atom.index == 0:
+                # include the bounding box details to the first atom
+                # in the simulation step
                 atom_pos += " %s"%(box)
 
+            # combine all atom lines to the main lines
             atom_lines += "%s %s %s\n"%(atom_pos, atom_vel, atom_frc) 
 
+        # line to go before all atom lines
         header = "%i\nstep # %i energy: %f\n"%(natoms, self.timesteps, 
                                              self.energy)
+        # write all lines in one big blob to the his.xyz file.
         hisfile = open("his.xyz", "a")
         hisfile.writelines(header + atom_lines)
         hisfile.close()
