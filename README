@@ -11,12 +11,120 @@ Python program designed for molecular dynamics simulation of atoms in a box.
 
 The code features several commonplace MD simulation tools such as the 
 velocity verlet and leap frog integrators, and long-range dispersion 
-interaction potentials.
+interaction potentials to propagate a set of atoms in the gas phase through
+time.
 
-It currenlty does not support an input file, but one can be included with
-ease due to the modular nature of constructing atom types and including
-them within the molecular dynamics simulation.  As such the simulation will
-run on a pair of noble gas atoms, Xe and Kr interacting in a 20 x 20 x 20
-Angstrom box.
+There are no bonded potential terms or electrostatic interactions so maximally
+this program can simulate noble gases in a box.  Keep in mind, there is 
+currently no temperature scaling so the energy might diverge.
 
+The code reads in an input file called "petemd.inp" which contains sections
+required to execute a md simulation.  The sections and directives required
+to operate the program will be discussed in detail below.
 
+The output consists of a history file called "his.xyz".  This file contains
+at each step: the total number of atoms in the simulation, the timestep,
+and the total energy of the system in kcal/mol. Also in this file are the 
+atomic positions, their velocities, and forces. These are printed on the same
+line in the form:
+[element] [position x, y, z] [velocity x, y, z] [force x, y, z]
+The format of this line is designed to work with "XMAKEMOL".  This program
+is easily obtainable from "http://www.nongnu.org/xmakemol/"
+
+In addition, the first atom of a frame contains a section titled:
+"bbox_xyz  [min_x] [max_x] [min_y] [max_y] [min_z] [max_z]"
+where the min and max values are used to define a box in which the 
+simulation takes place.  NOTE: this is limited to orthogonal boundaries ONLY
+and is a limitation of the "XMAKEMOL" program.
+
+== Visualization of output ==
+
+To visualize output on a linux computer, ensure first that "XMAKEMOL" is
+installed on the local machine.  It can be downloaded from the link
+http://www.nongnu.org/xmakemol/
+Once the program is installed enter this command:
+
+/path_to_xmakemol/xmakemol -f his.xyz
+
+The result should be an xwindow with the first frame of the simulation.
+You can edit some of the visual properties of the main window by clicking on
+the main window and pressing "Ctrl-p" or by selecting the "Control" drop-down
+menu and selecting "Perspective".  Select the "Toggle depth" radio button
+to switch to orthographic perspective.  You can also zoom in and out by
+sliding the top scale.
+To visualize the simulation as it propagates through time, select the main
+window and press "Ctrl-f" or from the "Control" drop-down menu select "Frames".
+Here you can control the speed of the steps by adjusting the slider.  To start
+the simulation press the "Start" button and watch the magic unfold.
+
+== Input file ==
+
+The input file is read by the ConfigParser module associated with python, 
+which is a robust file reading tool.  However it does place restrictions on 
+certain aspects of the file, for example directives must have unique names
+or else they will be overwritten. Directives can have values assigned to them
+using ":" or "=".  Either is acceptable in this case. 
+
+The input file requires three sections which are presented within square 
+brackets "[]"
+The three headers are 
+    * [parameters]
+    * [atoms]
+    * [dimensions]
+
+[parameters]
+parameters contains directives required for the system to move the atoms through
+time. The three directives read from the parameters heading are
+    * "timestep" - the time step in picoseconds
+    * "temperature" - the temperature of the simulation (Not currently used)
+    * "nsteps" - the number of steps to perform in the MD simulation
+
+[atoms]
+contains all the atoms in the simulation. the format for each atom is as follows:
+
+    atm1: [element] [x] [y] [z], or
+    atm1 = [element] [x] [y] [z]
+
+The "atm1" directive is not important and is a placeholder for the atom in
+the ConfigParser module. IT IS IMPORTANT TO MAKE EACH ATM DIRECTIVE UNIQUE
+or they will be overwritten, so the directive should increment for each
+successive atom.
+For example, with two atoms:
+
+    [atoms]
+    atm1: Kr  0.0 0.0 0.0
+    atm2: Ne  5.0 5.0 5.0
+
+The element name and it's x, y, and z coordinates should be delimited by
+spaces.
+
+[dimensions]
+This section contains the three vectors required to generate a periodic box
+for the simulation to run in.  The format is as follows:
+    vect1 = [x] [y] [z]
+    vect2 = [x] [y] [z]
+    vect3 = [x] [y] [z]
+It is important to set the directives as "vect1", "vect2", and "vect3" or they
+will not be properly read by the program.
+The resulting 3x3 array will define the periodic boundaries for the simulation.
+
+An example input file detailing three noble gas atoms in a 20x20x20 angstrom
+box is appended below:
+
+Filename: "petemd.inp"
+====================================
+[parameters]
+timestep = 1.
+temperature = 298.15
+nsteps = 10000
+
+[atoms]
+atm1: Kr  20.0000  15.0000 16.0000
+atm2: Xe   0.0000  12.0000  0.0000
+atm3: Kr   9.0000   4.0000  5.0000
+
+[dimensions]
+vect1 = 20.0000  0.0000  0.0000
+vect2 =  0.0000 20.0000  0.0000
+vect3 =  0.0000  0.0000 20.0000
+====================================
