@@ -380,6 +380,10 @@ def main():
         md.add_atom(atom)
     md.mix_pair_potentials()
 
+    # set the timesteps for the integrators
+    VelocityVerlet.dt = timestep
+    LeapFrog.dt = timestep
+
     for t in range(nsteps):
 
         # determine forces for the current time step
