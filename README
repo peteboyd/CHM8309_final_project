@@ -1,1 +1,22 @@
-# README file for peteMD.py
+=== Pete MD ===
+Contributors: Peter Boyd
+Link: https://bitbucket.org/pboyd/chm8309_final_project
+Licence: None
+Comments: This code was written in partial fulfillment of the course CHM8309 
+    "Advanced Scientific Programming for Chemists".
+
+Python program designed for molecular dynamics simulation of atoms in a box.
+
+== Description ==
+
+The code features several commonplace MD simulation tools such as the 
+velocity verlet and leap frog integrators, and long-range dispersion 
+interaction potentials.
+
+It currenlty does not support an input file, but one can be included with
+ease due to the modular nature of constructing atom types and including
+them within the molecular dynamics simulation.  As such the simulation will
+run on a pair of noble gas atoms, Xe and Kr interacting in a 20 x 20 x 20
+Angstrom box.
+
+

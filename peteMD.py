@@ -3,6 +3,7 @@ from element import MASS, epsilon, sigma
 import numpy as np
 import math
 import itertools
+import ConfigParser
 from numpy import asarray, asmatrix
 
 """peteMD.py -- MD simulations in python."""
@@ -127,13 +128,6 @@ class System(object):
         hisfile = open("his.xyz", "w")
         hisfile.close()
 
-    def get_temperature(self):
-        """Determines the global temperature based on the velocities of 
-        the atoms in the system.
-
-        """
-        pass
-
     def mix_pair_potentials(self):
         """Returns the pair potential parameter mixing.
 
@@ -239,14 +233,12 @@ class System(object):
         box.
 
         """
-
         fpos = np.dot(self.inverted_bounds, position)
         fpos -= np.floor(fpos)
         return np.dot(fpos, self.boundaries)
 
     def append_history(self):
         """Write atomic coordinates to a history file called his.xyz"""
-
         natoms = len(self.atoms)
         # first write the vectors corresponding to the bounding box
         box = "%-10s%9.3f%9.3f%9.3f%9.3f%9.3f%9.3f"%("bbox_xyz",
@@ -312,7 +304,7 @@ def buckingham(A, B, C, vector):
         E = A*exp(-B*r) - C/r^6
 
         """
-        return (A * exp(-B*r) - C/(r**6))
+        return (A * math.exp(-B*r) - C/(r**6))
 
     def force():
         """returns a vector parallel to the original
@@ -323,7 +315,7 @@ def buckingham(A, B, C, vector):
         F = -B*A*exp(-B*r) + 6*C/r^7
 
         """
-        return direction * (-B * A * exp(-B*r) + 6 * C / (r**7))
+        return direction * (-B * A * math.exp(-B*r) + 6 * C / (r**7))
 
     return energy, force
 
