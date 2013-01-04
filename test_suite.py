@@ -5,8 +5,9 @@ Unit testing of peteMD.py
 """
 import unittest
 import peteMD
-from peteMD import Atom, LeapFrog, VelocityVerlet
+from peteMD import Atom, LeapFrog, VelocityVerlet, Input
 import numpy as np
+import os
 import math
 
 class TestAtom(unittest.TestCase):
@@ -139,11 +140,60 @@ class TestEnergy(unittest.TestCase):
         newvect = (-1*math.exp(-1) + 6) * vector
         self.assertEqual(force().any(), newvect.any()) 
 
+
+class TestInput(unittest.TestCase):
+    """Make sure the input file is parsed correctly"""
+
+    def setUp(self):
+        """read in input file."""
+        lines = "[parameters]\n"
+        lines += "timestep = 1.\n"
+        lines += "temperature = 0.\n"
+        lines += "nsteps = 500\n"
+
+        lines += "[atoms]\n"
+        lines += "atm1: K  0. 5. 0.\n"
+        lines += "[dimensions]\n"
+        lines += "vect1 = 5. 0. 0.\n"
+        lines += "vect2 = 0. 5. 0.\n"
+        lines += "vect3 = 0. 0. 5."
+        tempfile = open(".test.inp", "w")
+        tempfile.writelines(lines)
+        tempfile.close()
+        self.inp = Input(filename=".test.inp")
+        os.remove(".test.inp")
+
+    def test_atoms(self):
+        """Determine if atom is assigned properly."""
+        atoms = self.inp.return_atoms()
+        self.assertEqual(atoms[0].element, "K")
+
+    def test_timestep(self):
+        """Check if timestep is assigned properly."""
+        self.assertEqual(self.inp.return_timestep(), 1.)
+
+    def test_sim_box(self):
+        """Ensure the simulation box is parsed correctly."""
+        box = self.inp.return_simulation_box()
+        test = np.identity(3) * 5.
+        self.assertEqual(box.any(), test.any())
+
+    def test_temp(self):
+        """Test temperature assignment."""
+        self.assertEqual(self.inp.return_temperature(), 0.)
+
+    def test_nsteps(self):
+        """Test number of simulation steps."""
+        self.assertEqual(self.inp.return_nsteps(), 500)
+
 atom_suite = unittest.TestLoader().loadTestsFromTestCase(TestAtom)
 system_suite = unittest.TestLoader().loadTestsFromTestCase(TestSystem)
 energy_suite = unittest.TestLoader().loadTestsFromTestCase(TestEnergy)
+input_suite = unittest.TestLoader().loadTestsFromTestCase(TestInput)
 
 if __name__ == "__main__":
     unittest.TextTestRunner(verbosity=2).run(atom_suite)
     unittest.TextTestRunner(verbosity=2).run(system_suite)
+    unittest.TextTestRunner(verbosity=2).run(energy_suite)
+    unittest.TextTestRunner(verbosity=2).run(input_suite)
     unittest.TextTestRunner(verbosity=2).run(energy_suite)
