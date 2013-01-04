@@ -9,7 +9,11 @@ Python program designed for molecular dynamics simulation of atoms in a box.
 
 == Description ==
 
-The code features several commonplace MD simulation tools such as the 
+This program was written to be compatible with python 2.7 and is not 
+guaranteed to work with other versions of python. In addition the code is
+dependent on the external module Numpy.  Other modules used by peteMD are 
+found in the python standard library as of version 2.7.3.
+peteMD features several commonplace MD simulation tools such as the 
 velocity verlet and leap frog integrators, and long-range dispersion 
 interaction potentials to propagate a set of atoms in the gas phase through
 time.
@@ -36,26 +40,6 @@ In addition, the first atom of a frame contains a section titled:
 where the min and max values are used to define a box in which the 
 simulation takes place.  NOTE: this is limited to orthogonal boundaries ONLY
 and is a limitation of the "XMAKEMOL" program.
-
-== Visualization of output ==
-
-To visualize output on a linux computer, ensure first that "XMAKEMOL" is
-installed on the local machine.  It can be downloaded from the link
-http://www.nongnu.org/xmakemol/
-Once the program is installed enter this command:
-
-/path_to_xmakemol/xmakemol -f his.xyz
-
-The result should be an xwindow with the first frame of the simulation.
-You can edit some of the visual properties of the main window by clicking on
-the main window and pressing "Ctrl-p" or by selecting the "Control" drop-down
-menu and selecting "Perspective".  Select the "Toggle depth" radio button
-to switch to orthographic perspective.  You can also zoom in and out by
-sliding the top scale.
-To visualize the simulation as it propagates through time, select the main
-window and press "Ctrl-f" or from the "Control" drop-down menu select "Frames".
-Here you can control the speed of the steps by adjusting the slider.  To start
-the simulation press the "Start" button and watch the magic unfold.
 
 == Input file ==
 
@@ -128,3 +112,24 @@ vect1 = 20.0000  0.0000  0.0000
 vect2 =  0.0000 20.0000  0.0000
 vect3 =  0.0000  0.0000 20.0000
 ====================================
+
+== Visualization of output ==
+
+To visualize output on a linux computer, ensure first that "XMAKEMOL" is
+installed on the local machine.  It can be downloaded from the link
+http://www.nongnu.org/xmakemol/
+Once the program is installed enter this command:
+
+/path_to_xmakemol/xmakemol -f his.xyz
+
+The result should be an xwindow with the first frame of the simulation.
+You can edit some of the visual properties of the main window by clicking on
+the main window and pressing "Ctrl-p" or by selecting the "Control" drop-down
+menu and selecting "Perspective".  Select the "Toggle depth" radio button
+to switch to orthographic perspective.  You can also zoom in and out by
+sliding the top scale.
+To visualize the simulation as it propagates through time, select the main
+window and press "Ctrl-f" or from the "Control" drop-down menu select "Frames".
+Here you can control the speed of the steps by adjusting the slider.  To start
+the simulation press the "Start" button and watch the magic unfold.
+
