@@ -3,6 +3,7 @@ from element import MASS, epsilon, sigma
 import numpy as np
 import math
 import itertools
+import sys
 import ConfigParser
 from numpy import asarray, asmatrix
 
@@ -319,17 +320,67 @@ def buckingham(A, B, C, vector):
 
     return energy, force
 
+class Input(object):
+    """Class to parse the input file and return important values."""
+
+    def __init__(self, filename="petemd.inp"):
+        """initiate parsing, default file is petemd.inp"""
+        self.filename = filename
+        self.parser = ConfigParser.SafeConfigParser()
+        self.parser.read(self.filename)
+        
+    def return_timestep(self):
+        """get the timestep in picoseconds"""
+        return self.parser.getfloat("parameters", "timestep")
+
+    def return_atoms(self):
+        """Returns a list of atoms to be used in an md system."""
+        atom_list = []
+        for atm in self.parser.items("atoms"):
+            atom = atm[1].split()
+            element = atom[0]
+            coordinates = np.array([float(i) for i in atom[1:]])
+            atom_list.append(Atom(element, position=coordinates))
+        return atom_list
+
+    def return_simulation_box(self):
+        """Return the periodic boundaries in a 3x3 numpy array."""
+        box = np.zeros((3,3))
+        for vector in self.parser.items("dimensions"):
+            values = vector[1].split()
+            if vector[0] == "vect1":
+                box[0] = np.array([float(i) for i in values]) 
+            elif vector[0] == "vect2":
+                box[1] = np.array([float(i) for i in values])
+            elif vector[0] == "vect3":
+                box[2] = np.array([float(i) for i in values])
+
+        return box
+
+    def return_temperature(self):
+        """Get the temperature from the input file."""
+        return self.parser.getfloat("parameters", "temperature")
+
+    def return_nsteps(self):
+        """Return the number of steps in the md simulation."""
+        return self.parser.getint("parameters", "nsteps")
+
 def main():
-    sim_box = 20.*np.identity(3)
-    md = System(298.15, sim_box)
-    r = np.random
-    atom1 = Atom("Ar", position=r.rand(3)*r.randint(0, 20))
-    atom2 = Atom("Kr", position=r.rand(3)*r.randint(0, 20))
-    md.add_atom(atom1)
-    md.add_atom(atom2)
+    # get info from input file
+    input = Input()
+    box = input.return_simulation_box()
+    atoms = input.return_atoms()
+    temp = input.return_temperature()
+    nsteps = input.return_nsteps()
+    timestep = input.return_timestep()
+
+    # generate md system
+    md = System(temp, box)
+    for atom in atoms:
+        md.add_atom(atom)
     md.mix_pair_potentials()
 
-    for t in range(1000):
+    for t in range(nsteps):
 
         # determine forces for the current time step
         md.calculate_forces()
