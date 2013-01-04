@@ -1,0 +1,133 @@
+Developer documentation for peteMD.py
+
+Pete MD is an object oriented approach to molecular dynamics simulations
+written in python.
+
+The program can be obtained using mercurial, provided one has access to the 
+repository at https://bitbucket.org/pboyd/chm8309_final_project. The source
+can be downloaded a local machine using the command
+
+hg clone https://bitbucket.org/pboyd/chm8309_final_project
+
+The source contains four files;
+    * element.py  -  contains force field parameters and mass for each element
+    * test_suite.py  -  a series of unit tests of the main program
+    * peteMD.py  -  the main program
+    * petemd.inp  -  a default input file to make the program run
+
+The main program can be broken down into three classes, the main one being 
+Simulation, which controls the evolution of atoms through time. The other 
+classes are accessed by Simulation at runtime.  They consist of Atom, Input,
+LeapFrog, and VelocityVerlet.
+
+Methods
+
+System.mix_pair_potentials()
+for each pair of atoms within the System.atoms list, their lennard-jones
+parameters, epsilon and sigma are looked up from within the file element.py
+and are mixed with the lorentz-berthelot mixing rules.  These are stored in
+a dictionary called System.lr_param['lj']. For an atom i and atom j, the
+mixing is done as follows:
+epsilon = sqrt(epsilon(i) * epsilon(j))
+sigma = (sigma(i) + sigma(j)) / 2
+
+System.add_atom(atom)
+the atom input is an Atom class instance.  This function shifts the position
+of the atom to within the Systems' periodic boundaries using the 
+shift_position funciton. The atom is assigned an index and appended to a list
+called "atoms" which will be accessed throughout the simulation.
+
+System.calculate_forces()
+forces are calculated for all of the atoms within the simulation box. This is
+done by determining pairwise distance vectors between atoms, and shifting it
+according to the minimum image convention.  The vector is adjusted to within
+a half unit cell distance by calling the boxshift() function.
+The pairwise energy and force are calculated with the lennard-jones function
+by calling the lennardjones function.  The epsilon and sigma values are 
+accessed through the dictionary lr_param['lj'].
+NOTE: the buckingham potential could be used here and the framework has been
+implemented to utilize this function, however the force field parameters 
+are currently not coded in.
+
+System.calculate_velocities()
+Performs a velocity calculation based on pre-calculated forces on the atoms.
+The actual velocity calculation is calculated performed by the class
+VelocityVerlet using the class method update_velocity.
+NOTE: the program contains the LeapFrog algorithm which is an analogous method,
+however default is set to VelocityVerlet.
+
+System.increment_time()
+adjusts the positions of the atoms by incrementing the timestep by 1. The
+atoms are adjusted based on previously calculated forces and velocities
+using the VelocityVerlet.update_position classmethod.
+Atoms are then shifted to within the periodic boundaries using the 
+shift_position function.
+NOTE: the program contains the LeapFrog algorithm which is an analogous method,
+however default is set to VelocityVerlet.
+
+System.boxshift(vector)
+The vector is a numpy array of length 3.
+Shifts a vector to within a half unit-cell by applying the minimum image
+convention.  This ensures that pairwise atom interactions are evaluated at the
+smallest distance between atoms.
+
+System.shift_position(position)
+the position is a numpy array of length 3.
+Shifts an atomic position to within the bounds of the periodic box.
+
+System.append_history()
+stores the current atomic configurations of the atoms in the list "atoms"
+in the output file "his.xyz"
+each entry contains:
+[int] - integer describing the number of atoms
+step [int] energy: [float]  - int: the step number, float: the total energy
+the remaining lines contain atomistic information in the form of cartesian
+coordinates: "%-6s %9.3f %9.3f %9.3f" element_name, x, y, z
+and vectors describing velocities and forces
+vector: "atom_vector %9.3f %9.3f %9.3f" vect_x, vect_y, vect_z
+
+
+class Atom()
+contains basic atomistic information such as name, element, and mass.
+histories of position, velocity, and force are stored in
+position_history, velocity_history, and force_history, respectively
+
+Atom.store_force()
+resets the current force to zero and stores the previous time-steps force
+in the force_history list.
+
+LeapFrog
+contains two class methods, update_position and update_velocity which update
+the position and velocity respectively, according to the LeapFrog algorithm
+update_position(atom)
+updates the atom position. Requires an Atom class instance as the argument
+update_velocity(atom)
+updates an atom's velocity. Requires an Atom class instance as the argument
+
+VelocityVerlet
+contains two class methods, update_position and update_velocity which update
+the position and velocity respectively, according to the velocity verlet algorithm
+update_position(atom)
+updates the atom position. Requires an Atom class instance as the argument
+update_velocity(atom)
+updates an atom's velocity. Requires an Atom class instance as the argument
+
+lennardjones(eps, sig, vector)
+takes an epsilon, sigma and vector as arguments to determine the energy and 
+force of a pair interaction between two atoms.
+The vector is converted to a unit vector with the same direction, and 
+the magnitude of the vector is determined.
+This function returns two functions, energy and force, which provide the 
+scalar quantity of the energy and the vector quantity of the force
+respectively.
+
+buckingham(A, B, C, vector)
+takes the A, B, and C parameters, and a vector required to calculate the 
+buckingham potential between a pair of atoms.
+The vector is converted to a unit vector with the same direction, and 
+the magnitude of the vector is determined.
+This function returns two functions, energy and force, which provide the 
+scalar quantity of the energy and the vector quantity of the force
+respectively.
+
+

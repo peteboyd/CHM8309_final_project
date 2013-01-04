@@ -155,12 +155,7 @@ class System(object):
         coordinates to within the periodic bounds.
         
         """
-        # get fractional coordinates according to the simulation box
-        atom.position = np.dot(asarray(self.inverted_bounds), atom.position)
-        # shift to within the periodic boundaries
-        atom.position -= np.floor(atom.position)
-        # convert back to cartesian coordinates
-        atom.position = np.dot(self.boundaries, atom.position)
+        atom.position = self.shift_position(atom.position)
         atom.index = len(self.atoms)
         self.atoms.append(atom)
 
@@ -234,8 +229,11 @@ class System(object):
         box.
 
         """
+        # get fractional coordinates according to the simulation box
         fpos = np.dot(self.inverted_bounds, position)
+        # shift to within the periodic boundaries
         fpos -= np.floor(fpos)
+        # return the shifted cartesian coordinates
         return np.dot(fpos, self.boundaries)
 
     def append_history(self):
