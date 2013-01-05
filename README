@@ -69,10 +69,10 @@ contains all the atoms in the simulation. the format for each atom is as follows
     atm1: [element] [x] [y] [z], or
     atm1 = [element] [x] [y] [z]
 
-The "atm1" directive is not important and is a placeholder for the atom in
-the ConfigParser module. IT IS IMPORTANT TO MAKE EACH ATM DIRECTIVE UNIQUE
-or they will be overwritten, so the directive should increment for each
-successive atom.
+The details of the "atm1" directive are not important and is a placeholder
+for the atom in the ConfigParser module. IT IS IMPORTANT TO MAKE EACH ATM
+DIRECTIVE UNIQUE or atoms with identical names will be overwritten, so the 
+directive should increment for each successive atom.
 For example, with two atoms:
 
     [atoms]
